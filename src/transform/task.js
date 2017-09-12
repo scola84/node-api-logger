@@ -7,8 +7,7 @@ import parts from './task/parts';
 
 export default class TransformerTask extends Abstract {
   run(callback) {
-    this._debuglog('LogTransformerTask run data=%j',
-      this._data);
+    this._log('TransformerTask run data=%j', this._data);
 
     this._database
       .connection(this._config.database.source)
@@ -25,7 +24,7 @@ export default class TransformerTask extends Abstract {
   }
 
   _transform(transformer, callback) {
-    this._debuglog('LogTransformerTask _transform data=%j transformer=%j',
+    this._log('TransformerTask _transform data=%j transformer=%j',
       this._data, transformer);
 
     const name =
@@ -46,7 +45,7 @@ export default class TransformerTask extends Abstract {
     }
 
     if (transformer.group_name === 'date') {
-      values.push(parts.group[transformer.group_value]);
+      values.push(parts.group.value[transformer.group_value]);
     } else if (transformer.group_name === 'time') {
       values.push(transformer.group_value);
       values.push(transformer.group_value);
@@ -65,10 +64,15 @@ export default class TransformerTask extends Abstract {
       values.push(this._data.id.split(','));
     }
 
+    if (this._data.timestamp) {
+      query += parts.inner.where.timestamp;
+      values.push(this._convert(transformer, this._data.timestamp));
+    }
+
     query += parts.inner.group;
 
     if (transformer.group_name === 'date') {
-      values.push(parts.group[transformer.group_value]);
+      values.push(parts.group.value[transformer.group_value]);
     } else if (transformer.group_name === 'time') {
       values.push(transformer.group_value);
       values.push(transformer.group_value);
@@ -78,7 +82,7 @@ export default class TransformerTask extends Abstract {
       db: '%(db)s',
       id: parts.id[transformer.id_name],
       aggr: parts.aggr[transformer.aggr_name],
-      group: parts.group[transformer.group_name]
+      group: parts.group.level[transformer.group_name]
     });
 
     if (transformer.wrap_name) {
@@ -114,7 +118,7 @@ export default class TransformerTask extends Abstract {
       }
 
       if (transformer.source === transformer.target) {
-        this._finish(name, callback);
+        this._finish(name, result.affectedRows, callback);
         return;
       }
 
@@ -134,12 +138,14 @@ export default class TransformerTask extends Abstract {
           return;
         }
 
-        this._finish(name, callback);
+        this._finish(name, result.length, callback);
       });
     });
   }
 
-  _finish(name, callback) {
+  _finish(name, rows, callback) {
+    this._log('TransformerTask _finish name=%s #rows=%d', name, rows);
+
     this._pubsub.publish(this._config.pubsub.path, {
       event: this._config.pubsub.event,
       data: Object.assign(this._data, {
@@ -148,5 +154,20 @@ export default class TransformerTask extends Abstract {
     });
 
     callback();
+  }
+
+  _convert(transformer, timestamp) {
+    const name = transformer.group_name === 'time' ?
+      transformer.group_name : transformer.group_value;
+
+    if (parts.convert[name]) {
+      return this._i18n
+        .date()
+        .moment(Number(timestamp))
+        .startOf(name)
+        .valueOf();
+    }
+
+    return 0;
   }
 }

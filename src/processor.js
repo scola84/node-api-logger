@@ -19,7 +19,7 @@ export default class LogProcessor extends Abstract {
   }
 
   start() {
-    this._debuglog('Processor start %j', this._config);
+    this._log('Processor start %j', this._config);
 
     this._server
       .pubsub()
@@ -53,7 +53,7 @@ export default class LogProcessor extends Abstract {
   }
 
   _process(data, callback) {
-    this._debuglog('Processor _process data=%j', data);
+    this._log('Processor _process data=%j', data);
 
     this._task()
       .config(this._config)
@@ -66,7 +66,7 @@ export default class LogProcessor extends Abstract {
   }
 
   _publish(data) {
-    this._debuglog('Processor _pubsub data=%j', data);
+    this._log('Processor _pubsub data=%j', data);
 
     if (this._cancel(data) === true) {
       return false;
@@ -115,7 +115,7 @@ export default class LogProcessor extends Abstract {
     this._server
       .logger()
       .stat(
-        [this._log(name, value)],
+        [this._compose(name, value)],
         this._config.database.queue,
         null,
         false
@@ -126,14 +126,14 @@ export default class LogProcessor extends Abstract {
     this._server
       .logger()
       .text(
-        [this._log(name, value)],
+        [this._compose(name, value)],
         this._config.database.queue,
         null,
         false
       );
   }
 
-  _log(name, value) {
+  _compose(name, value) {
     return [
       this._config.server.name + '.queue.' + name,
       this._config.server.id,
@@ -158,15 +158,7 @@ export default class LogProcessor extends Abstract {
       return;
     }
 
-    this._queue.push(data, () => {
-      this._stat('tasks', this._length());
-    });
-
-    this._stat('run', 1);
-    this._stat('tasks', this._length());
-  }
-
-  _length() {
-    return this._queue.length() + this._queue.running();
+    this._queue.push(data);
+    this._stat('task', 1);
   }
 }

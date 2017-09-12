@@ -2,7 +2,7 @@ import { debuglog } from 'util';
 
 export default class Abstract {
   constructor() {
-    this._debuglog = debuglog('logger');
+    this._log = debuglog('logger');
 
     this._config = null;
     this._data = null;

@@ -9,14 +9,14 @@ const queries = {
 
 export default class MysqlTransport extends Transport {
   stat(logs, connection, shard) {
-    this._log(queries.stat, logs, connection, shard);
+    this._write(queries.stat, logs, connection, shard);
   }
 
   text(logs, connection, shard) {
-    this._log(queries.text, logs, connection, shard);
+    this._write(queries.text, logs, connection, shard);
   }
 
-  _log(query, logs, connection = 'default', shard = null) {
+  _write(query, logs, connection = 'default', shard = null) {
     query = this._server
       .database()
       .connection(connection)

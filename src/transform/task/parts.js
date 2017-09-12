@@ -1,4 +1,10 @@
 export default {
+  convert: {
+    time: 'day',
+    day: 'month',
+    month: 'year'
+  },
+
   aggr: {
     avg: 'AVG(value)',
     cnt: 'COUNT(value)',
@@ -18,15 +24,26 @@ export default {
   },
 
   group: {
-    date: 'UNIX_TIMESTAMP(FROM_UNIXTIME(ROUND(timestamp / 1000) + (offset * 60), ?))',
-    time: 'FLOOR(timestamp / (? * 1000)) * (? * 1000)',
-
-    day: '%Y-%m-%d',
-    month: '%Y-%m-01'
+    level: {
+      date: `
+        UNIX_TIMESTAMP(
+          FROM_UNIXTIME(
+            ROUND(timestamp / 1000) + offset,
+            ?
+          )
+        ) * 1000
+      `,
+      time: 'FLOOR(timestamp / (? * 1000)) * (? * 1000)',
+    },
+    value: {
+      day: '%Y-%m-%d',
+      month: '%Y-%m-01',
+      year: '%Y-01-01',
+    }
   },
 
   id: {
-    pow: 'id & ~(POWER(2,?) - 1)',
+    mask: 'id & ~(POWER(2,?) - 1)',
     self: 'id',
     val: '?'
   },
@@ -50,10 +67,12 @@ export default {
       name: `
         WHERE name = ?`,
       id: `
-        AND id IN (?)`
+        AND id IN (?)`,
+      timestamp: `
+        AND timestamp > ?`
     },
     group: `
-      GROUP BY %(group)s`
+      GROUP BY %(group)s FOR UPDATE`
   },
 
   mic: `
@@ -89,6 +108,8 @@ export default {
   transform: `
     SELECT *
     FROM %(db)s.log_transform
-    WHERE event = ?
+    WHERE
+      event = ? AND
+      \`order\` > 0
     ORDER BY \`order\` ASC`
 };
