@@ -109,7 +109,7 @@ export default {
     SELECT *
     FROM %(db)s.log_transform
     WHERE
-      event = ? AND
+      name = ? AND
       \`order\` > 0
     ORDER BY \`order\` ASC`
 };
