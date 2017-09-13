@@ -1,11 +1,12 @@
 import Logger from './src/log/logger';
-import LogAbstract from './src/abstract';
-import LogProcessor from './src/processor';
-import TransformerTask from './src/transform/task';
+import TransformTask from './src/transform/task';
+
+function transformTask() {
+  return new TransformTask();
+}
 
 export {
   Logger,
-  LogAbstract,
-  LogProcessor,
-  TransformerTask
+  TransformTask,
+  transformTask
 };

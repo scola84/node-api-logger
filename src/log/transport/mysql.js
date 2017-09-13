@@ -16,7 +16,7 @@ export default class MysqlTransport extends Transport {
     this._write(queries.text, logs, connection, shard);
   }
 
-  _write(query, logs, connection = 'default', shard = null) {
+  _write(query, logs, connection = 'logger', shard = null) {
     query = this._server
       .database()
       .connection(connection)

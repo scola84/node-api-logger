@@ -7,7 +7,6 @@ export default {
 
   aggr: {
     avg: 'AVG(value)',
-    cnt: 'COUNT(value)',
     max: 'MAX(value)',
     min: 'MIN(value)',
     sum: 'SUM(value)',
@@ -16,6 +15,9 @@ export default {
     mns: 'value - ?',
     mul: 'value * ?',
     div: 'value / ?',
+
+    cntall: 'COUNT(value)',
+    cntdis: 'COUNT(DISTINCT value)',
 
     stdpop: 'STDDEV_POP(value)',
     stdsmp: 'STDDEV_SAMP(value)',

@@ -1,4 +1,3 @@
-import LogAbstract from '../abstract';
 import ConsoleTransport from './transport/console';
 import MysqlTransport from './transport/mysql';
 
@@ -7,10 +6,29 @@ const transports = {
   mysql: MysqlTransport
 };
 
-export default class Logger extends LogAbstract {
+export default class Logger {
   constructor() {
-    super();
+    this._config = null;
+    this._server = null;
     this._transport = null;
+  }
+
+  config(value = null) {
+    if (value === null) {
+      return this._config;
+    }
+
+    this._config = value;
+    return this;
+  }
+
+  server(value = null) {
+    if (value === null) {
+      return this._server;
+    }
+
+    this._server = value;
+    return this;
   }
 
   stat(logs, database, shard, publish) {
@@ -23,7 +41,7 @@ export default class Logger extends LogAbstract {
     this._publish(logs[0], shard, publish);
   }
 
-  _publish([, id, name], shard, publish = true) {
+  _publish([name, id], shard, publish = true) {
     if (typeof this._config.pubsub === 'undefined') {
       return;
     }
@@ -39,6 +57,7 @@ export default class Logger extends LogAbstract {
         event: this._config.pubsub.event,
         data: {
           id,
+          name,
           shard
         }
       });

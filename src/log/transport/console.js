@@ -2,20 +2,25 @@ import Transport from '../transport';
 
 export default class ConsoleTransport extends Transport {
   stat(logs) {
-    this._write(logs[0], logs.length);
+    logs.forEach((log) => {
+      this._write(log);
+    });
   }
 
   text(logs) {
-    this._write(logs[0], logs.length);
+    logs.forEach((log) => {
+      this._write(log);
+    });
   }
 
-  _write([id, name, timestamp, offset, value], length = 0) {
+  _write([id, name, timestamp, offset, value]) {
     console.log(
-      id,
+      '%s %s %s %s %s',
+      id || '-',
       name,
       new Date(timestamp + offset).toISOString(),
-      value,
-      length > 1 ? length : ''
+      offset,
+      value
     );
   }
 }

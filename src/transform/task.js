@@ -1,15 +1,50 @@
+import { debuglog } from 'util';
 import each from 'async/each';
 import sprintf from 'sprintf';
 import ovalues from 'lodash-es/values';
-
-import Abstract from '../abstract';
 import parts from './task/parts';
 
-export default class TransformerTask extends Abstract {
-  run(callback) {
-    this._log('TransformerTask run data=%j', this._data);
+export default class TransformTask {
+  constructor() {
+    this._log = debuglog('logger');
 
-    this._database
+    this._config = null;
+    this._data = null;
+    this._server = null;
+  }
+
+  config(value = null) {
+    if (value === null) {
+      return this._config;
+    }
+
+    this._config = value;
+    return this;
+  }
+
+  data(value = null) {
+    if (value === null) {
+      return this._data;
+    }
+
+    this._data = value;
+    return this;
+  }
+
+  server(value = null) {
+    if (value === null) {
+      return this._server;
+    }
+
+    this._server = value;
+    return this;
+  }
+
+  run(callback) {
+    this._log('TransformTask run data=%j', this._data);
+
+    this._server
+      .database()
       .connection(this._config.database.source)
       .query(parts.transform, [this._data.name], (error, transformers) => {
         if (error instanceof Error === true) {
@@ -24,7 +59,7 @@ export default class TransformerTask extends Abstract {
   }
 
   _transform(transformer, callback) {
-    this._log('TransformerTask _transform data=%j transformer=%j',
+    this._log('TransformTask _transform data=%j transformer=%j',
       this._data, transformer);
 
     const name =
@@ -103,7 +138,8 @@ export default class TransformerTask extends Abstract {
       replace += parts.replace.values;
     }
 
-    query = this._database
+    query = this._server
+      .database()
       .connection(transformer.source)
       .query(query);
 
@@ -122,7 +158,8 @@ export default class TransformerTask extends Abstract {
         return;
       }
 
-      query = this._database
+      query = this._server
+        .database()
         .connection(transformer.target)
         .query(replace);
 
@@ -144,14 +181,17 @@ export default class TransformerTask extends Abstract {
   }
 
   _finish(name, rows, callback) {
-    this._log('TransformerTask _finish name=%s #rows=%d', name, rows);
+    this._log('TransformTask _finish name=%s #rows=%d', name, rows);
 
-    this._pubsub.publish(this._config.pubsub.path, {
-      event: this._config.pubsub.event,
-      data: Object.assign(this._data, {
-        name
-      })
-    });
+    this._server
+      .pubsub()
+      .client()
+      .publish(this._config.pubsub.path, {
+        event: this._config.pubsub.event,
+        data: Object.assign(this._data, {
+          name
+        })
+      });
 
     callback();
   }
@@ -161,7 +201,8 @@ export default class TransformerTask extends Abstract {
       transformer.group_name : transformer.group_value;
 
     if (parts.convert[name]) {
-      return this._i18n
+      return this._server
+        .i18n()
         .date()
         .moment(Number(timestamp))
         .startOf(name)
