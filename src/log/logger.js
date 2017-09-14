@@ -31,36 +31,12 @@ export default class Logger {
     return this;
   }
 
-  stat(logs, database, shard, publish) {
-    this._setup().stat(logs, database, shard);
-    this._publish(logs[0], shard, publish);
+  stat(logs, database, shard, callback) {
+    this._setup().stat(logs, database, shard, callback);
   }
 
-  text(logs, database, shard, publish) {
-    this._setup().text(logs, database, shard);
-    this._publish(logs[0], shard, publish);
-  }
-
-  _publish([name, id], shard, publish = true) {
-    if (typeof this._config.pubsub === 'undefined') {
-      return;
-    }
-
-    if (publish === false) {
-      return;
-    }
-
-    this._server
-      .pubsub()
-      .client()
-      .publish(this._config.pubsub.path, {
-        event: this._config.pubsub.event,
-        data: {
-          id,
-          name,
-          shard
-        }
-      });
+  text(logs, database, shard, callback) {
+    this._setup().text(logs, database, shard, callback);
   }
 
   _setup() {

@@ -1,16 +1,20 @@
 import Transport from '../transport';
 
 export default class ConsoleTransport extends Transport {
-  stat(logs) {
+  stat(logs, connection, shard, callback = () => {}) {
     logs.forEach((log) => {
-      this._write(log);
+      this._write(log, callback);
     });
+
+    callback();
   }
 
-  text(logs) {
+  text(logs, connection, shard, callback = () => {}) {
     logs.forEach((log) => {
-      this._write(log);
+      this._write(log, callback);
     });
+
+    callback();
   }
 
   _write([id, name, timestamp, offset, value]) {

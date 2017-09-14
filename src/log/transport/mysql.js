@@ -8,15 +8,17 @@ const queries = {
 };
 
 export default class MysqlTransport extends Transport {
-  stat(logs, connection, shard) {
-    this._write(queries.stat, logs, connection, shard);
+  stat(logs, connection, shard, callback) {
+    this._write(queries.stat, logs, connection, shard, callback);
   }
 
-  text(logs, connection, shard) {
-    this._write(queries.text, logs, connection, shard);
+  text(logs, connection, shard, callback) {
+    this._write(queries.text, logs, connection, shard, callback);
   }
 
-  _write(query, logs, connection = 'logger', shard = null) {
+  _write(query, logs, connection = 'logger',
+    shard = null, callback = () => {}) {
+
     query = this._server
       .database()
       .connection(connection)
@@ -30,6 +32,8 @@ export default class MysqlTransport extends Transport {
       if (error instanceof Error === true) {
         console.error(error);
       }
+
+      callback();
     });
   }
 }

@@ -11,6 +11,10 @@ export default {
     min: 'MIN(value)',
     sum: 'SUM(value)',
 
+    mic: `
+      MIN(value) AS min,
+      MAX(value)`,
+
     pls: 'value + ?',
     mns: 'value - ?',
     mul: 'value * ?',
@@ -83,7 +87,11 @@ export default {
       id,
       timestamp,
       offset,
-      IF(@prev < i.value, i.value - @prev, i.value) AS value,
+      IF(
+        @prev < i.value,
+        i.value - @prev,
+        i.value - i.min
+      ) AS value,
       @prev := i.value
     FROM (
       %(query)s

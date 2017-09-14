@@ -96,7 +96,7 @@ export default class TransformTask {
 
     if (this._data.id) {
       query += parts.inner.where.id;
-      values.push(this._data.id.split(','));
+      values.push(String(this._data.id).split(','));
     }
 
     if (this._data.timestamp) {
@@ -183,15 +183,17 @@ export default class TransformTask {
   _finish(name, rows, callback) {
     this._log('TransformTask _finish name=%s #rows=%d', name, rows);
 
-    this._server
-      .pubsub()
-      .client()
-      .publish(this._config.pubsub.path, {
-        event: this._config.pubsub.event,
-        data: Object.assign(this._data, {
-          name
-        })
-      });
+    this._config.pubsub.publish.forEach((path) => {
+      this._server
+        .pubsub()
+        .client()
+        .publish(path, {
+          event: 'done',
+          data: Object.assign(this._data, {
+            name
+          })
+        });
+    });
 
     callback();
   }
