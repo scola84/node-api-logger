@@ -97,11 +97,11 @@ export default {
       timestamp,
       offset,
       IF(
-        @prev < i.value,
-        i.value - @prev,
-        i.value - i.min
+        @prev < value,
+        value - @prev,
+        value - min
       ) AS value,
-      @prev := i.value
+      @prev := value
     FROM (
       %(query)s
     ) AS i`,

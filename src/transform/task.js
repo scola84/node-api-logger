@@ -186,8 +186,6 @@ export default class TransformTask {
       query
     });
 
-    console.log(query, values);
-
     let replace = parts.replace.into;
 
     if (transformer.source === transformer.target) {
