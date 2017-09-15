@@ -34,7 +34,7 @@ export default {
       date: `
         UNIX_TIMESTAMP(
           FROM_UNIXTIME(
-            ROUND(timestamp / 1000) + offset,
+            (timestamp / 1000) + offset,
             ?
           )
         ) * 1000
@@ -55,14 +55,19 @@ export default {
   },
 
   inner: {
-    select: `
-      SELECT
-        ? AS name,
-        %(id)s AS id,
-        %(group)s AS timestamp,
-        MAX(offset) AS offset,
-        %(aggr)s AS value,
-        @prev := 0`,
+    select: {
+      main: `
+        SELECT
+          ? AS name,
+          %(id)s AS id,
+          %(group)s AS timestamp,
+          ANY_VALUE(offset) AS offset,
+          %(aggr)s AS value,
+          @prev := %(prev)s`,
+      prev: `
+        SELECT
+          COALESCE(MAX(value), 0)`
+    },
     from: {
       stat: `
         FROM %(db)s.log_stat`,
@@ -74,11 +79,15 @@ export default {
         WHERE name = ?`,
       id: `
         AND id IN (?)`,
-      timestamp: `
-        AND timestamp > ?`
+      timestamp: {
+        main: `
+          AND timestamp >= ?`,
+        prev: `
+          AND timestamp < ?`
+      }
     },
     group: `
-      GROUP BY %(group)s FOR UPDATE`
+      GROUP BY %(group)s`
   },
 
   mic: `

@@ -58,6 +58,110 @@ export default class TransformTask {
       });
   }
 
+  _inner(transformer, name, query, values) {
+    let object = {};
+
+    query += parts.inner.select.main;
+    values.push(name);
+
+    [object, values] = this._db(transformer, object, values);
+    [object, values] = this._id(transformer, object, values);
+    [object, values] = this._group(transformer, object, values);
+    [object, values] = this._aggr(transformer, object, values);
+    [object, values] = this._prev(transformer, object, values);
+
+    [query, values] = this._from(transformer, query, values);
+    [query, values] = this._where(transformer, query, values, 'main');
+
+    query += parts.inner.group;
+
+    [object, values] = this._group(transformer, object, values);
+
+    query = sprintf(query, object);
+
+    return [query, values];
+  }
+
+  _db(transformer, object, values) {
+    object.db = '%(db)s';
+    return [object, values];
+  }
+
+  _id(transformer, object, values) {
+    object.id = parts.id[transformer.id_name];
+
+    if (transformer.id_value) {
+      values.push(transformer.id_value);
+    } else if (this._data.idval) {
+      values.push(this._data.idval);
+    }
+
+    return [object, values];
+  }
+
+  _group(transformer, object, values) {
+    object.group = parts.group.level[transformer.group_name];
+
+    if (transformer.group_name === 'date') {
+      values.push(parts.group.value[transformer.group_value]);
+    } else if (transformer.group_name === 'time') {
+      values.push(transformer.group_value);
+      values.push(transformer.group_value);
+    } else {
+      object.group = 'timestamp';
+    }
+
+    return [object, values];
+  }
+
+  _aggr(transformer, object, values) {
+    object.aggr = parts.aggr[transformer.aggr_name];
+
+    if (this._data.aggrval) {
+      values.push(this._data.aggrval);
+    }
+
+    return [object, values];
+  }
+
+  _prev(transformer, object, values) {
+    if (typeof this._data.timestamp === 'undefined') {
+      object.prev = 0;
+      return [object, values];
+    }
+
+    let query = parts.inner.select.prev;
+
+    [query, values] = this._from(transformer, query, values);
+    [query, values] = this._where(transformer, query, values, 'prev');
+
+    object.prev = '(' + query + ')';
+
+    return [object, values];
+  }
+
+  _from(transformer, query, values) {
+    query += parts.inner.from[transformer.type];
+    return [query, values];
+  }
+
+  _where(transformer, query, values, part) {
+    query += parts.inner.where.name;
+    values.push(this._data.name);
+
+    if (this._data.id) {
+      query += parts.inner.where.id;
+      values.push(String(this._data.id).split(','));
+    }
+
+    if (this._data.timestamp) {
+      query += parts.inner.where.timestamp[part];
+      values.push(this._convert(transformer, this._data.timestamp));
+    }
+
+    return [query, values];
+  }
+
   _transform(transformer, callback) {
     this._log('TransformTask _transform data=%j transformer=%j',
       this._data, transformer);
@@ -68,57 +172,9 @@ export default class TransformTask {
       (transformer.group_value || transformer.group_name);
 
     let query = '';
-    const values = [];
+    let values = [];
 
-    query += parts.inner.select;
-    values.push(name);
-
-    if (transformer.id_value) {
-      values.push(transformer.id_value);
-    } else if (this._data.idval) {
-      values.push(this._data.idval);
-    }
-
-    if (transformer.group_name === 'date') {
-      values.push(parts.group.value[transformer.group_value]);
-    } else if (transformer.group_name === 'time') {
-      values.push(transformer.group_value);
-      values.push(transformer.group_value);
-    }
-
-    if (this._data.aggrval) {
-      values.push(this._data.aggrval);
-    }
-
-    query += parts.inner.from[transformer.type];
-    query += parts.inner.where.name;
-    values.push(this._data.name);
-
-    if (this._data.id) {
-      query += parts.inner.where.id;
-      values.push(String(this._data.id).split(','));
-    }
-
-    if (this._data.timestamp) {
-      query += parts.inner.where.timestamp;
-      values.push(this._convert(transformer, this._data.timestamp));
-    }
-
-    query += parts.inner.group;
-
-    if (transformer.group_name === 'date') {
-      values.push(parts.group.value[transformer.group_value]);
-    } else if (transformer.group_name === 'time') {
-      values.push(transformer.group_value);
-      values.push(transformer.group_value);
-    }
-
-    query = sprintf(query, {
-      db: '%(db)s',
-      id: parts.id[transformer.id_name],
-      aggr: parts.aggr[transformer.aggr_name],
-      group: parts.group.level[transformer.group_name]
-    });
+    [query, values] = this._inner(transformer, name, query, values);
 
     if (transformer.wrap_name) {
       query = sprintf(parts[transformer.wrap_name], {
@@ -129,6 +185,8 @@ export default class TransformTask {
     query = sprintf(parts.outer, {
       query
     });
+
+    console.log(query, values);
 
     let replace = parts.replace.into;
 
@@ -183,7 +241,7 @@ export default class TransformTask {
   _finish(name, rows, callback) {
     this._log('TransformTask _finish name=%s #rows=%d', name, rows);
 
-    this._config.pubsub.publish.forEach((path) => {
+    this._config.publish.forEach((path) => {
       this._server
         .pubsub()
         .client()

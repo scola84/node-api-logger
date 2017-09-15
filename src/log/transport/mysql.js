@@ -2,9 +2,9 @@ import Transport from '../transport';
 
 const queries = {
   stat: `
-    INSERT INTO %(db)s.log_stat VALUES ?`,
+    REPLACE INTO %(db)s.log_stat VALUES ?`,
   text: `
-    INSERT INTO %(db)s.log_text VALUES ?`
+    REPLACE INTO %(db)s.log_text VALUES ?`
 };
 
 export default class MysqlTransport extends Transport {
