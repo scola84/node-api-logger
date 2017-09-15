@@ -1,6 +1,6 @@
 {
   "name": "@scola/api-logger",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "description": "Logger",
   "repository": "github:scola84/node-api-logger",
   "author": "M.C. van den Boogaart <scola@kvdb.name>",
