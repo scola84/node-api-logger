@@ -66,7 +66,7 @@ export default {
           @prev := %(prev)s`,
       prev: `
         SELECT
-          COALESCE(MAX(value), 0)`
+          MAX(value)`
     },
     from: {
       stat: `
@@ -97,9 +97,9 @@ export default {
       timestamp,
       offset,
       IF(
-        @prev < value,
-        value - @prev,
-        value - min
+        @prev IS NULL,
+        value - min,
+        value - @prev
       ) AS value,
       @prev := value
     FROM (
